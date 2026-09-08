@@ -1,0 +1,16 @@
+{
+  "name": "parklens",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.mjs",
+    "start": "node server.mjs",
+    "typesense:setup": "node scripts/typesense-setup.mjs",
+    "typesense:import-nps": "node scripts/import-nps.mjs",
+    "typesense:embed": "node scripts/embed-catalog.mjs"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^4.2.0"
+  }
+}

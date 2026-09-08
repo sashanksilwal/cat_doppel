@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="description" content="Find parks by landscape, photo, and driving distance." />
+  <title>ParkLens | Explore parks by photo</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#results">Skip to results</a>
+  <header class="topbar">
+    <a class="brand" href="#explore" aria-label="ParkLens home"><span class="brand-mark">▲</span><span>ParkLens</span></a>
+    <nav aria-label="Primary navigation"><a class="active" href="#explore"><span>⌕</span> Explore</a><a href="#savedSearches"><span>▱</span> Collections</a><a href="#about"><span>ⓘ</span> About</a></nav>
+    <button class="saved-button" id="savedButton" aria-label="View saved parks">Saved <span id="savedCount">0</span></button>
+  </header>
+
+  <main>
+    <section class="search-workspace" id="explore" aria-labelledby="pageTitle">
+      <div class="page-heading">
+        <div><p class="breadcrumb">Explore / United States</p><h1 id="pageTitle">Find a park that looks like this</h1><p>Search by scenery, upload a reference, and limit results by driving distance.</p></div>
+        <div class="source-note" id="sourceNote"><span class="status-dot"></span><span><b id="sourceTitle">Connecting to search</b><span id="sourceDetail">Checking Typesense…</span></span></div>
+      </div>
+      <div class="search-panel">
+        <label class="upload-zone" id="uploadZone" tabindex="0">
+          <input id="imageInput" type="file" accept="image/jpeg,image/png,image/webp" hidden />
+          <span class="upload-empty" id="uploadEmpty"><span class="upload-icon" aria-hidden="true">＋</span><span><strong>Add a reference photo</strong><small>Drop an image or choose a file</small></span></span>
+          <img id="uploadPreview" alt="Your uploaded reference" hidden />
+          <button class="remove-image" id="removeImage" type="button" hidden aria-label="Remove reference image">×</button>
+        </label>
+        <div class="search-fields">
+          <label class="field query-field"><span>LANDSCAPE OR ACTIVITY</span><div><span aria-hidden="true">⌕</span><input id="queryInput" placeholder="Try “waterfalls and old-growth forest”" autocomplete="off" /></div></label>
+          <label class="field location-field"><span>STARTING NEAR</span><div><span aria-hidden="true">⌖</span><input id="locationInput" value="Indianapolis, IN" autocomplete="off" /><button id="locateButton" type="button" title="Use current location" aria-label="Use current location">◎</button></div></label>
+          <label class="field radius-field"><span>DISTANCE</span><select id="radiusSelect" aria-label="Search radius"><option value="200">200 miles</option><option value="500" selected>500 miles</option><option value="1000">1,000 miles</option><option value="3000">Any distance</option></select></label>
+          <button class="primary-button" id="searchButton" type="button"><span>Search parks</span><b aria-hidden="true">→</b></button>
+        </div>
+      </div>
+      <div class="suggestions" aria-label="Suggested searches"><span>Popular:</span><button data-query="waterfalls and moss">Waterfalls</button><button data-query="desert sunset">Desert views</button><button data-query="quiet alpine lake">Quiet lakes</button><button data-query="scenic drive">Scenic drives</button></div>
+    </section>
+
+    <section class="results-section" id="results" aria-labelledby="resultsTitle">
+      <div class="results-toolbar">
+        <div><h2 id="resultsTitle">Parks near Indianapolis</h2><p id="resultSummary">Showing places inside 500 miles</p></div>
+        <div class="toolbar-actions"><button class="save-search-button" id="saveSearchButton" type="button">＋ Save search</button><div class="view-toggle" aria-label="Result view"><button class="active" data-view="split" aria-pressed="true">List + map</button><button data-view="grid" aria-pressed="false">List</button><button data-view="map" aria-pressed="false">Map</button></div></div>
+      </div>
+      <div class="filter-row" id="filters" aria-label="Landscape filters"><button class="filter active" data-filter="all" aria-pressed="true">All</button><button class="filter" data-filter="Mountains" aria-pressed="false">Mountains</button><button class="filter" data-filter="Water" aria-pressed="false">Water</button><button class="filter" data-filter="Forest" aria-pressed="false">Forest</button><button class="filter" data-filter="Desert" aria-pressed="false">Desert</button><button class="filter" data-filter="Accessible" aria-pressed="false">Accessible</button></div>
+      <div class="results-layout" id="resultsLayout">
+        <div class="cards" id="cards" aria-live="polite"></div>
+        <aside class="map" id="map" aria-label="Interactive map of search results"><div id="leafletMap"></div><button class="center-map-button" id="centerMapButton" type="button"><span></span>Show starting location</button><div class="map-legend"><div class="legend-line"><span class="legend-origin"></span><small>Starting location</small></div><div class="legend-line"><span class="legend-result"></span><small><b id="mapCount">0 places</b> in range</small></div></div></aside>
+      </div>
+    </section>
+    <section class="saved-searches" id="savedSearches" aria-labelledby="savedSearchesTitle">
+      <div class="section-heading"><div><p>YOUR COLLECTIONS</p><h2 id="savedSearchesTitle">Saved searches</h2></div><button id="newGroupButton" type="button">＋ New group</button></div>
+      <div id="savedGroups"></div>
+    </section>
+  </main>
+  <footer id="about"><div><b>ParkLens</b></div></footer>
+  <dialog class="park-dialog" id="parkDialog"><button class="dialog-close" id="dialogClose" aria-label="Close details">×</button><div id="dialogContent"></div></dialog>
+  <dialog class="save-dialog" id="saveSearchDialog"><form id="saveSearchForm" method="dialog"><div class="dialog-heading"><h2>Save this search</h2><button type="button" id="saveDialogClose" aria-label="Close">×</button></div><p>Keep this search in a collection so you can run it again later.</p><label><span>SEARCH NAME</span><input id="savedSearchName" required maxlength="60" /></label><label><span>COLLECTION</span><select id="savedSearchGroup"></select></label><label class="new-group-field" id="newGroupField" hidden><span>NEW COLLECTION NAME</span><input id="newGroupName" maxlength="40" placeholder="e.g. Summer road trip" /></label><div class="dialog-actions"><button type="button" id="saveDialogCancel">Cancel</button><button type="submit">Save search</button></div></form></dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script><script src="config.js"></script><script type="module" src="app.js"></script>
+</body>
+</html>

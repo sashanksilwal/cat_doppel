@@ -1,0 +1,19 @@
+# Secrets
+.env
+.env.*
+!.env.example
+config.local.js
+*-api-keys-*.txt
+
+# Dependencies and builds
+node_modules/
+.cache/
+dist/
+.next/
+
+# Logs and local tooling
+*.log
+.DS_Store
+.idea/
+.vscode/
+.codex/
