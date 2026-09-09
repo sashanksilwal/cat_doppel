@@ -1,5 +1,5 @@
 {
-  "name": "doppel-dog-match",
+  "name": "doppel-pet-match",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,6 +10,8 @@
     "dogs:download": "node scripts/download-dog-photos.mjs",
     "dogs:seed": "node scripts/seed-dog-catalog.mjs",
     "typesense:dogs": "node scripts/typesense-dogs-setup.mjs",
+    "cats:seed": "node scripts/seed-cat-catalog.mjs",
+    "typesense:cats": "node scripts/typesense-cats-setup.mjs",
     "typesense:setup": "node scripts/typesense-setup.mjs",
     "typesense:import-nps": "node scripts/import-nps.mjs",
     "typesense:import-wildlife": "node scripts/import-wildlife.mjs",

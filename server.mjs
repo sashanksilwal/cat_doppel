@@ -16,15 +16,21 @@ function json(res, status, body) {
 }
 
 async function searchDogs(req, res) {
-  const { base, collection, searchKey } = typesenseConfig();
+  const { base, collection: configuredCollection, searchKey } = typesenseConfig();
   if (!searchKey) return json(res, 503, { error: "Typesense is not configured" });
 
   const input = new URL(req.url, `http://${req.headers.host}`).searchParams;
+  const species = input.get("species") === "dog" || (req.url || "").startsWith("/api/dogs") ? "dog" : "cat";
+  const collection = species === "cat"
+    ? process.env.CAT_TYPESENSE_COLLECTION || "cats"
+    : process.env.DOG_TYPESENSE_COLLECTION || configuredCollection || "dogs";
   const q = String(input.get("q") || "*").slice(0, 120);
   const mode = input.get("mode") || "all";
   const page = Math.max(1, Math.min(100, Number(input.get("page")) || 1));
   const lat = Number(input.get("lat") || 39.7684);
   const lng = Number(input.get("lng") || -86.1581);
+  const radius = Math.max(1, Math.min(100, Number(input.get("radius")) || 10));
+  const filters = [`location:(${lat}, ${lng}, ${radius} mi)`];
   const query = new URLSearchParams({
     q,
     query_by: "name,breed,tags,shelter,neighborhood,bio",
@@ -32,15 +38,16 @@ async function searchDogs(req, res) {
     per_page: "24",
     page: String(page),
   });
-  if (["adopt", "pet"].includes(mode)) query.set("filter_by", `type:=${mode}`);
+  if (["adopt", "pet"].includes(mode)) filters.push(`type:=${mode}`);
+  query.set("filter_by", filters.join(" && "));
 
   try {
     const response = await fetch(`${base}/collections/${collection}/documents/search?${query}`, {
       headers: { "X-TYPESENSE-API-KEY": searchKey },
     });
     const payload = await response.json();
-    if (!response.ok) return json(res, response.status, { error: payload.message || "Dog search failed" });
-    return json(res, 200, { source: "typesense", found: payload.found, page, hits: payload.hits });
+    if (!response.ok) return json(res, response.status, { error: payload.message || "Pet search failed" });
+    return json(res, 200, { source: "typesense", species, radius, found: payload.found, page, hits: payload.hits });
   } catch {
     return json(res, 502, { error: "Unable to reach Typesense" });
   }
@@ -104,26 +111,28 @@ async function readJson(req, maxBytes = 8_000_000) {
 async function imageSearch(req, res) {
   try {
     const input = await readJson(req);
-    const { lat, lng, filters } = searchFilters(input);
-    const match = String(input.image || "").match(/^data:(image\/(?:jpeg|png|webp));base64,(.+)$/);
-    if (!match) return json(res, 400, { error: "Send a JPEG, PNG, or WebP image" });
+    const species = input.species === "dog" ? "dog" : "cat";
+    const { base, collection: configuredCollection, searchKey } = typesenseConfig();
+    const collection = species === "cat"
+      ? process.env.CAT_TYPESENSE_COLLECTION || "cats"
+      : process.env.DOG_TYPESENSE_COLLECTION || configuredCollection || "dogs";
+    const lat = Number(input.lat || 39.7684);
+    const lng = Number(input.lng || -86.1581);
+    const radius = Math.max(1, Math.min(100, Number(input.radius) || 10));
+    const match = String(input.image || "").match(/^data:(image\/(?:jpeg|png));base64,(.+)$/);
+    if (!match) return json(res, 400, { error: "Send a JPEG or PNG image" });
     const bytes = Buffer.from(match[2], "base64");
     if (!bytes.length || bytes.length > 5_000_000) return json(res, 413, { error: "Image must be smaller than 5 MB" });
-    const { embedImage } = await import("./lib/embeddings.mjs");
-    const vector = await embedImage(new Blob([bytes], { type: match[1] }));
-    const { base, collection, searchKey } = typesenseConfig();
     if (!searchKey) return json(res, 503, { error: "Typesense is not configured" });
-    const q = String(input.q || "*").slice(0, 200);
-    const page = Math.max(1, Number(input.page) || 1);
+    const filters = [`location:(${lat}, ${lng}, ${radius} mi)`];
+    if (["adopt", "pet"].includes(input.mode)) filters.push(`type:=${input.mode}`);
     const search = {
       collection,
-      q,
-      query_by: "name,description,tags",
-      filter_by: filters,
-      vector_query: `${VECTOR_FIELD}:([${vector.join(",")}], k:500${q === "*" ? "" : ", alpha:0.8"})`,
-      exclude_fields: VECTOR_FIELD,
+      q: "*",
+      filter_by: filters.join(" && "),
+      vector_query: `${VECTOR_FIELD}:([], image:${match[2]}, k:24)`,
+      exclude_fields: `${VECTOR_FIELD},image_data`,
       per_page: 24,
-      page,
     };
     const response = await fetch(`${base}/multi_search`, {
       method: "POST",
@@ -145,6 +154,7 @@ async function imageSearch(req, res) {
 }
 
 createServer(async (req, res) => {
+  if ((req.url || "").startsWith("/api/pets")) return searchDogs(req, res);
   if ((req.url || "").startsWith("/api/dogs")) return searchDogs(req, res);
   if ((req.url || "").startsWith("/api/search")) return searchTypesense(req, res);
   if (req.method === "POST" && req.url === "/api/image-search") return imageSearch(req, res);

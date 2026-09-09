@@ -8,6 +8,9 @@
   "functions": {
     "api/dogs.js": {
       "maxDuration": 10
+    },
+    "api/pets.js": {
+      "maxDuration": 10
     }
   }
 }

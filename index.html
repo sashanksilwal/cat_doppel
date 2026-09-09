@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#fffc00" />
-  <meta name="description" content="Take a selfie, discover your dog doppelgänger, and meet adoptable dogs nearby." />
-  <title>Doppel — Meet your dog doppelgänger</title>
+  <meta name="description" content="Take a selfie, discover your cat or dog doppelgänger, and meet adoptable pets nearby." />
+  <title>Doppel — Meet your pet doppelgänger</title>
   <link rel="stylesheet" href="node_modules/leaflet/dist/leaflet.css" />
-  <link rel="stylesheet" href="styles.css?v=20260908-3" />
+  <link rel="stylesheet" href="styles.css?v=20260908-6" />
 </head>
 <body data-screen="camera">
   <svg class="icon-sprite" aria-hidden="true">
@@ -28,7 +28,7 @@
     <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
   </svg>
 
-  <a class="skip-link" href="#discoverPanel">Skip to nearby dogs</a>
+  <a class="skip-link" href="#discoverPanel">Skip to nearby pets</a>
 
   <div class="app-shell">
     <aside class="sidebar" aria-label="Primary navigation">
@@ -76,27 +76,27 @@
           <div class="location-pill"><svg><use href="#i-pin" /></svg><span>Indianapolis, IN</span></div>
 
           <div class="camera-intro" id="cameraIntro">
-            <span class="eyebrow">DOG DOPPELGÄNGER</span>
+            <span class="eyebrow" id="speciesEyebrow">CAT DOPPELGÄNGER</span>
             <h1 id="cameraTitle">Find your<br /><em>paw-fect</em> match.</h1>
-            <p>Take a selfie. We’ll match your vibe with dogs near you.</p>
+            <p id="cameraSpeciesCopy">Take a selfie. We’ll match your vibe with cats near you.</p>
           </div>
 
           <div class="face-guide" id="faceGuide" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 
-          <div class="scan-layer" id="scanLayer" aria-hidden="true"><span></span><b>Reading your dog energy…</b></div>
+          <div class="scan-layer" id="scanLayer" aria-hidden="true"><span></span><b id="scanSpeciesCopy">Reading your cat energy…</b></div>
 
           <article class="match-result" id="matchResult" hidden>
             <button class="match-close" id="retakeButton" type="button" aria-label="Retake photo">×</button>
-            <button class="match-dog dog-photo" id="matchDogZoom" type="button" style="--photo:0 0" aria-label="Enlarge matched dog photo">
+            <button class="match-dog dog-photo" id="matchDogZoom" type="button" style="--photo:0 0" aria-label="Enlarge matched pet photo">
               <span class="photo-open-hint"><svg><use href="#i-zoom" /></svg></span>
             </button>
             <div class="match-copy">
               <span>YOUR DOPPELGÄNGER</span>
-              <h2>Golden retriever mix</h2>
+              <h2>Maine Coon mix</h2>
               <p>Warm, curious & impossible not to like.</p>
             </div>
             <div class="match-score"><strong>96</strong><span>%<br />match</span></div>
-            <button class="match-cta" id="showMatchesButton" type="button">Meet dogs like me <svg><use href="#i-chevron" /></svg></button>
+            <button class="match-cta" id="showMatchesButton" type="button"><span id="matchCtaCopy">Meet cats like me</span> <svg><use href="#i-chevron" /></svg></button>
           </article>
 
           <div class="camera-controls" id="cameraControls">
@@ -124,25 +124,50 @@
           <button class="profile-button" type="button" aria-label="Open profile">SA<span></span></button>
         </header>
 
+        <div class="species-switch" role="group" aria-label="Choose pet type">
+          <button type="button" data-species="dog">Dogs</button>
+          <button class="active" type="button" data-species="cat">Cats</button>
+        </div>
+
         <div class="discover-tools">
           <div class="intent-switch" role="group" aria-label="Meet intent">
             <button class="active" type="button" data-intent="adopt">Adopt</button>
             <button type="button" data-intent="pet">Pet & play</button>
           </div>
-          <label class="dog-search"><svg><use href="#i-search" /></svg><input id="dogSearch" type="search" placeholder="Search dogs" aria-label="Search nearby dogs" /></label>
+          <label class="dog-search"><svg><use href="#i-search" /></svg><input id="dogSearch" type="search" placeholder="Search cats" aria-label="Search nearby cats" /></label>
         </div>
 
         <div class="match-banner" id="matchBanner">
           <div class="banner-icon"><svg><use href="#i-paw" /></svg></div>
-          <div><span>YOUR TOP MATCHES</span><b>Golden energy, close to home</b></div>
+          <div class="banner-copy">
+            <span id="matchBannerLabel">YOUR TOP MATCHES</span>
+            <div class="banner-edit-row">
+              <input id="matchTagline" type="text" value="Feline energy, close to home" maxlength="52" aria-label="Personalize your match message" />
+              <button id="editMatchTagline" type="button" aria-label="Edit your match message">Edit</button>
+            </div>
+          </div>
           <span class="sparkle">✦</span>
         </div>
 
+        <article class="side-recommendation" id="sideRecommendation" aria-live="polite" hidden>
+          <div class="recommendation-photo dog-photo" id="recommendationPhoto"></div>
+          <div class="recommendation-copy">
+            <span class="section-kicker">RECOMMENDED FOR YOU</span>
+            <h3 id="recommendationName">Your match</h3>
+            <p id="recommendationBreed">Nearby pet</p>
+            <small id="recommendationDetails">Ready to meet you</small>
+          </div>
+          <div class="recommendation-actions">
+            <strong id="recommendationScore">96%</strong>
+            <button id="recommendationProfileButton" type="button">View profile</button>
+          </div>
+        </article>
+
         <div class="display-bar">
-          <span id="dogResultCount">4 dogs near Indianapolis</span>
+          <span id="dogResultCount">Cats near Indianapolis</span>
           <div class="display-actions">
-            <button class="pack-shuffle" id="shuffleDogs" type="button"><svg><use href="#i-flip" /></svg>New pack</button>
-            <div class="view-switch" role="group" aria-label="Dog results view">
+            <button class="pack-shuffle" id="shuffleDogs" type="button"><svg><use href="#i-flip" /></svg>New faces</button>
+            <div class="view-switch" role="group" aria-label="Pet results view">
               <button class="active" type="button" data-results-view="list"><svg><use href="#i-list" /></svg>List</button>
               <button type="button" data-results-view="map"><svg><use href="#i-pin" /></svg>Map</button>
             </div>
@@ -150,7 +175,14 @@
         </div>
         <div class="dog-list" id="dogList" aria-live="polite"></div>
         <div class="dog-map" id="dogMap" hidden>
-          <div id="leafletMap" aria-label="Interactive map of nearby dogs"></div>
+          <div id="leafletMap" aria-label="Interactive map of nearby pets"></div>
+          <div class="map-distance-filter" role="group" aria-label="Maximum distance">
+            <span>Within</span>
+            <button type="button" data-distance="3">3 mi</button>
+            <button type="button" data-distance="5">5 mi</button>
+            <button class="active" type="button" data-distance="10">10 mi</button>
+            <button type="button" data-distance="25">25 mi</button>
+          </div>
           <div class="map-location"><span></span><div><b>Searching near you</b><small>Indianapolis, Indiana</small></div></div>
           <button class="recenter-map" id="recenterMap" type="button"><svg><use href="#i-pin" /></svg>Recenter</button>
         </div>
@@ -166,7 +198,7 @@
   </div>
 
   <dialog class="dog-dialog" id="dogDialog">
-    <button class="dialog-close" id="dogDialogClose" type="button" aria-label="Close dog details">×</button>
+    <button class="dialog-close" id="dogDialogClose" type="button" aria-label="Close pet details">×</button>
     <div id="dogDialogContent"></div>
   </dialog>
 
@@ -177,8 +209,8 @@
     </div>
     <div class="photo-dialog-footer">
       <div>
-        <span>YOUR DOG DOPPELGÄNGER</span>
-        <h2 id="photoDialogTitle">Dog photo</h2>
+        <span id="photoSpeciesLabel">YOUR CAT DOPPELGÄNGER</span>
+        <h2 id="photoDialogTitle">Cat photo</h2>
         <p>Drag to move · pinch, scroll, or use the controls to zoom</p>
       </div>
       <div class="photo-zoom-controls" aria-label="Photo zoom controls">
@@ -195,7 +227,7 @@
       <button class="dialog-close" id="interestDialogClose" type="button" aria-label="Close contact form">×</button>
       <span class="form-paw"><svg><use href="#i-paw" /></svg></span>
       <p class="section-kicker">ONE STEP CLOSER</p>
-      <h2>Meet <span id="interestDogName">Sunny</span></h2>
+      <h2>Meet <span id="interestDogName">Luna</span></h2>
       <p>We’ll introduce you to the rescue or pet parent. No commitment—just a hello.</p>
       <label><span>Your name</span><input id="visitorName" required value="Alex" autocomplete="name" /></label>
       <label><span>Email</span><input required type="email" placeholder="alex@example.com" autocomplete="email" /></label>
@@ -206,6 +238,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="node_modules/leaflet/dist/leaflet.js"></script>
-  <script type="module" src="app.js?v=20260908-3"></script>
+  <script type="module" src="app.js?v=20260908-6"></script>
 </body>
 </html>

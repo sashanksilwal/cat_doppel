@@ -1,13 +1,32 @@
-import { dogs } from "./data.js";
+import { cats as fallbackCats, dogs } from "./data.js";
+
+let cats = [...fallbackCats];
+try {
+  const response = await fetch(new URL("./data/generated-cats.json", import.meta.url));
+  if (response.ok) cats = (await response.json()).cats || [];
+} catch {}
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-const savedKey = "doppel-saved-dogs";
-let dogCatalog = [...dogs];
-const dogCache = new Map(dogs.map(dog => [dog.id, dog]));
+const savedKey = "doppel-saved-pets";
+const matchTaglineKey = "doppel-match-taglines";
+const defaultMatchTaglines = {
+  "dog:adopt": "Golden energy, close to home",
+  "dog:pet": "Friendly dogs who welcome visitors",
+  "cat:adopt": "Feline energy, close to home",
+  "cat:pet": "Friendly cats who welcome visitors",
+};
+let storedMatchTaglines = {};
+try {
+  storedMatchTaglines = JSON.parse(localStorage.getItem(matchTaglineKey) || "{}");
+} catch {}
+const localCatalogs = { cat: cats, dog: dogs };
+let dogCatalog = cats.slice(0, 24);
+const dogCache = new Map([...dogs, ...cats].map(pet => [pet.id, pet]));
 
 const state = {
   screen: "camera",
+  species: "cat",
   mode: "adopt",
   query: "",
   saved: new Set(JSON.parse(localStorage.getItem(savedKey) || "[]")),
@@ -19,9 +38,11 @@ const state = {
   searchResults: null,
   dataSource: "local",
   view: "list",
-  totalFound: dogs.length,
+  radius: 10,
+  totalFound: cats.length,
   currentPage: 1,
   lastMatchedDogId: null,
+  matchTaglines: { ...defaultMatchTaglines, ...storedMatchTaglines },
 };
 
 const els = {
@@ -34,6 +55,8 @@ const els = {
   discoverKicker: $(".discover-header .section-kicker"),
   discoverTools: $(".discover-tools"),
   matchBanner: $("#matchBanner"),
+  matchBannerLabel: $("#matchBannerLabel"),
+  matchTagline: $("#matchTagline"),
   cameraFrame: $("#cameraFrame"),
   cameraIntro: $("#cameraIntro"),
   cameraFeed: $("#cameraFeed"),
@@ -56,7 +79,7 @@ function icon(name) {
 }
 
 function dogPhotoStyle(dog) {
-  if (/^assets\/dogs\/(?:generated\/)?[a-z0-9._-]+\.(?:jpe?g|png|webp)$/i.test(dog.image || "")) {
+  if (/^assets\/(?:dogs|cats)\/(?:generated\/)?[a-z0-9._-]+\.(?:jpe?g|png|webp)$/i.test(dog.image || "")) {
     return `--dog-image:url(${dog.image});--dog-size:cover;--dog-position:center`;
   }
   return `--photo:${esc(dog.photo)}`;
@@ -71,6 +94,40 @@ function showToast(message) {
   els.toast.classList.add("show");
   clearTimeout(showToast.timer);
   showToast.timer = setTimeout(() => els.toast.classList.remove("show"), 2400);
+}
+
+function updateMatchBannerCopy() {
+  const key = `${state.species}:${state.mode}`;
+  els.matchBannerLabel.textContent = state.mode === "adopt" ? "YOUR TOP MATCHES" : "NEARBY PLAYDATES";
+  els.matchTagline.value = state.matchTaglines[key] || defaultMatchTaglines[key];
+}
+
+function updateSpeciesCopy() {
+  const singular = state.species;
+  const plural = `${singular}s`;
+  const title = singular.charAt(0).toUpperCase() + singular.slice(1);
+  els.body.dataset.species = singular;
+  $("#speciesEyebrow").textContent = `${title.toUpperCase()} DOPPELGÄNGER`;
+  $("#cameraSpeciesCopy").textContent = `Take a selfie. We’ll match your vibe with ${plural} near you.`;
+  $("#scanSpeciesCopy").textContent = `Reading your ${singular} energy…`;
+  $("#matchCtaCopy").textContent = `Meet ${plural} like me`;
+  $("#photoSpeciesLabel").textContent = `YOUR ${title.toUpperCase()} DOPPELGÄNGER`;
+  $("#dogSearch").placeholder = `Search ${plural}`;
+  $("#dogSearch").setAttribute("aria-label", `Search nearby ${plural}`);
+  $("#leafletMap").setAttribute("aria-label", `Interactive map of nearby ${plural}`);
+  document.title = `Doppel — Meet your ${singular} doppelgänger`;
+  updateMatchBannerCopy();
+}
+
+function saveMatchTagline() {
+  const key = `${state.species}:${state.mode}`;
+  const fallback = defaultMatchTaglines[key];
+  const nextTagline = els.matchTagline.value.trim().slice(0, 52) || fallback;
+  els.matchTagline.value = nextTagline;
+  if (nextTagline === state.matchTaglines[key]) return;
+  state.matchTaglines[key] = nextTagline;
+  localStorage.setItem(matchTaglineKey, JSON.stringify(state.matchTaglines));
+  showToast("Your match message is saved");
 }
 
 function favoriteButton(dog, extraClass = "") {
@@ -99,14 +156,16 @@ function dogCard(dog, index) {
 }
 
 function renderProfile() {
+  const species = state.species === "cat" ? "cat" : "dog";
+  const exampleBreed = state.species === "cat" ? "Maine Coon mix" : "Golden retriever mix";
   els.dogList.innerHTML = `<section class="profile-sheet">
     <div class="profile-hero"><div class="profile-avatar">SA</div><span class="profile-paw">${icon("paw")}</span></div>
-    <h3>Alex’s dog energy</h3>
-    <p>Golden retriever mix</p>
+    <h3>Alex’s ${species} energy</h3>
+    <p>${exampleBreed}</p>
     <div class="profile-meter"><span style="width:96%"></span></div>
     <div class="profile-stats">
       <div><b>${state.saved.size}</b><span>Saved friends</span></div>
-      <div><b>${state.totalFound.toLocaleString()}</b><span>Nearby dogs</span></div>
+      <div><b>${state.totalFound.toLocaleString()}</b><span>Nearby ${species}s</span></div>
       <div><b>96%</b><span>Top match</span></div>
     </div>
     <button type="button" data-screen-link="camera">Take a new Doppel</button>
@@ -123,6 +182,7 @@ function visibleDogResults() {
     const q = state.query.toLowerCase();
     visible = visible.filter((dog) => [dog.name, dog.breed, dog.shelter, ...dog.tags].join(" ").toLowerCase().includes(q));
   }
+  if (state.screen !== "saved") visible = visible.filter((pet) => Number(pet.distance) <= state.radius);
   return visible;
 }
 
@@ -135,14 +195,14 @@ function renderDogs() {
   const visible = visibleDogResults();
   const label = state.screen === "saved"
     ? `saved friend${visible.length === 1 ? "" : "s"}`
-    : `${state.mode === "adopt" ? "adoptable" : "playdate"} dog${visible.length === 1 ? "" : "s"}`;
+    : `${state.mode === "adopt" ? "adoptable" : "playdate"} ${state.species}${visible.length === 1 ? "" : "s"}`;
   els.dogResultCount.textContent = state.screen === "saved"
     ? `${visible.length} ${label}`
-    : `Showing ${visible.length} of ${state.totalFound.toLocaleString()} ${label}`;
+    : `Showing ${visible.length} of ${state.totalFound.toLocaleString()} ${label} within ${state.radius} mi`;
 
   els.dogList.innerHTML = visible.length
     ? visible.map(dogCard).join("")
-    : `<div class="empty-dogs">${icon("paw")}<b>${state.screen === "saved" ? "No saved friends yet" : "No pups found"}</b><span>${state.screen === "saved" ? "Tap a heart when a dog catches your eye." : "Try another name, breed, or personality."}</span></div>`;
+    : `<div class="empty-dogs">${icon("paw")}<b>${state.screen === "saved" ? "No saved friends yet" : `No ${state.species}s found`}</b><span>${state.screen === "saved" ? "Tap a heart when a pet catches your eye." : "Try another name, breed, or personality."}</span></div>`;
   els.dogList.hidden = state.view === "map";
   els.dogMap.hidden = state.view !== "map";
   if (state.view === "map") renderMap(visible);
@@ -167,6 +227,15 @@ function renderMap(visible = visibleDogResults()) {
   markerLayer.clearLayers();
 
   const origin = [39.7684, -86.1581];
+  L.circle(origin, {
+    radius: state.radius * 1609.344,
+    color: "#c9c600",
+    weight: 2,
+    dashArray: "6 7",
+    fillColor: "#fffc00",
+    fillOpacity: .06,
+    interactive: false,
+  }).addTo(markerLayer);
   L.circleMarker(origin, { radius: 7, color: "#fff", weight: 3, fillColor: "#10110f", fillOpacity: 1 })
     .bindTooltip("Your search area", { direction: "top" })
     .addTo(markerLayer);
@@ -219,7 +288,7 @@ function setScreen(screen) {
     els.discoverTitle.textContent = "A very good human";
   } else {
     els.discoverKicker.textContent = `${state.totalFound.toLocaleString()} FRIENDS NEARBY${state.dataSource === "typesense" ? " · LIVE" : ""}`;
-    els.discoverTitle.textContent = state.mode === "adopt" ? "Waiting to meet you" : "Ready for a playdate";
+    els.discoverTitle.textContent = state.mode === "adopt" ? "Waiting to meet you" : state.species === "cat" ? "Ready for a cuddle" : "Ready for a playdate";
   }
 
   renderDogs();
@@ -240,7 +309,7 @@ function toggleFavorite(id) {
     dialogFavorite.classList.toggle("saved", willSave);
     dialogFavorite.setAttribute("aria-label", `${willSave ? "Remove" : "Save"} ${dog.name}`);
   }
-  showToast(willSave ? `${dog.name} saved to your pack` : `${dog.name} removed from saved`);
+  showToast(willSave ? `${dog.name} saved to your favorites` : `${dog.name} removed from saved`);
 }
 
 function openDog(id) {
@@ -264,7 +333,7 @@ function openDog(id) {
         <div><span>Distance</span><b>${dog.distance.toFixed(1)} miles away</b></div>
         <div><span>Details</span><b>${esc(dog.fee)}</b></div>
       </div>
-      ${dog.source_url ? `<p class="photo-credit">Photo supplied by the <a href="${esc(dog.source_url)}" target="_blank" rel="noopener">Dog CEO API</a></p>` : ""}
+      ${dog.source_url ? `<p class="photo-credit">Photo supplied by <a href="${esc(dog.source_url)}" target="_blank" rel="noopener">${esc(dog.source || "the photo provider")}</a></p>` : ""}
       <button class="dialog-action" type="button" data-interest="${dog.id}">${action} ${icon("message")}</button>
     </div>`;
   $("#dogDialog").showModal();
@@ -315,7 +384,7 @@ async function startCamera() {
 }
 
 function chooseDogMatch() {
-  const candidates = dogCatalog.length ? dogCatalog : dogs;
+  const candidates = dogCatalog.length ? dogCatalog : localCatalogs[state.species];
   const freshCandidates = candidates.filter((dog) => dog.id !== state.lastMatchedDogId);
   const pool = freshCandidates.length ? freshCandidates : candidates;
   const dog = pool[Math.floor(Math.random() * pool.length)];
@@ -336,6 +405,31 @@ function showMatch(dog = chooseDogMatch()) {
   $(".match-copy p", els.matchResult).textContent = reason;
   $(".match-score strong", els.matchResult).textContent = Math.max(84, dog.vibe || 0);
   els.matchResult.hidden = false;
+}
+
+function renderSideRecommendation(dog = state.matchedDog) {
+  const panel = $("#sideRecommendation");
+  if (!dog) {
+    panel.hidden = true;
+    return;
+  }
+  $("#recommendationPhoto").setAttribute("style", dogPhotoStyle(dog));
+  $("#recommendationName").textContent = dog.name;
+  $("#recommendationBreed").textContent = dog.breed;
+  $("#recommendationDetails").textContent = `${dog.distance.toFixed(1)} mi away · ${dog.shelter}`;
+  $("#recommendationScore").textContent = `${Math.max(84, dog.vibe || 0)}%`;
+  $("#recommendationProfileButton").dataset.openDog = dog.id;
+  panel.hidden = false;
+}
+
+function showMatchedRecommendation() {
+  const dog = state.matchedDog;
+  if (!dog) return setScreen("nearby");
+  if (state.searchResults) state.searchResults = [dog, ...state.searchResults.filter((pet) => pet.id !== dog.id)];
+  else dogCatalog = [dog, ...dogCatalog.filter((pet) => pet.id !== dog.id)];
+  setScreen("nearby");
+  renderSideRecommendation(dog);
+  if (window.innerWidth <= 820) $("#sideRecommendation").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 const photoViewer = { scale: 1, x: 0, y: 0, pointers: new Map(), pinchDistance: 0, dragOffset: null };
@@ -447,8 +541,8 @@ function normalizeRemoteDog(document) {
 
 let searchRequest = 0;
 async function fetchDogPage(page) {
-  const params = new URLSearchParams({ q: state.query || "*", mode: state.mode, page: String(page) });
-  const response = await fetch(`/api/dogs?${params}`);
+  const params = new URLSearchParams({ q: state.query || "*", mode: state.mode, species: state.species, radius: String(state.radius), page: String(page) });
+  const response = await fetch(`/api/pets?${params}`);
   if (!response.ok) throw new Error("Typesense unavailable");
   return response.json();
 }
@@ -475,9 +569,12 @@ async function searchTypesenseDogs({ randomize = false } = {}) {
     setScreen(state.screen);
   } catch {
     if (request !== searchRequest) return;
-    dogCatalog = [...dogs];
+    const fallback = localCatalogs[state.species];
+    dogCatalog = fallback
+      .filter(pet => pet.type === state.mode && Number(pet.distance) <= state.radius)
+      .slice(0, 24);
     state.searchResults = null;
-    state.totalFound = dogs.filter(dog => dog.type === state.mode).length;
+    state.totalFound = fallback.filter(dog => dog.type === state.mode && Number(dog.distance) <= state.radius).length;
     state.dataSource = "local";
     setScreen(state.screen);
   }
@@ -485,6 +582,28 @@ async function searchTypesenseDogs({ randomize = false } = {}) {
 
 function loadTypesenseCatalog() {
   return searchTypesenseDogs({ randomize: true });
+}
+
+async function setSpecies(species) {
+  if (!localCatalogs[species] || species === state.species) return;
+  state.species = species;
+  state.query = "";
+  state.searchResults = null;
+  state.currentPage = 1;
+  state.lastMatchedDogId = null;
+  state.matchedDog = null;
+  renderSideRecommendation(null);
+  const fallback = localCatalogs[species];
+  dogCatalog = fallback
+    .filter(pet => pet.type === state.mode && Number(pet.distance) <= state.radius)
+    .slice(0, 24);
+  state.totalFound = fallback.filter(pet => pet.type === state.mode && Number(pet.distance) <= state.radius).length;
+  $("#dogSearch").value = "";
+  $$('[data-species]').forEach(button => button.classList.toggle("active", button.dataset.species === species));
+  resetCapture();
+  updateSpeciesCopy();
+  setScreen("nearby");
+  await searchTypesenseDogs({ randomize: true });
 }
 
 document.addEventListener("click", (event) => {
@@ -522,13 +641,26 @@ $$('[data-mode], [data-intent]').forEach((button) => {
     state.mode = button.dataset.mode || button.dataset.intent;
     state.searchResults = null;
     $$("[data-intent]").forEach((item) => item.classList.toggle("active", item.dataset.intent === state.mode));
-    const copy = $(".match-banner div:nth-child(2)");
-    copy.innerHTML = state.mode === "adopt"
-      ? `<span>YOUR TOP MATCHES</span><b>Golden energy, close to home</b>`
-      : `<span>NEARBY PLAYDATES</span><b>Friendly dogs who welcome visitors</b>`;
+    updateMatchBannerCopy();
     setScreen("nearby");
     searchTypesenseDogs({ randomize: true });
   });
+});
+
+$$('[data-species]').forEach(button => button.addEventListener("click", () => setSpecies(button.dataset.species)));
+
+els.matchTagline.addEventListener("change", saveMatchTagline);
+els.matchTagline.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") els.matchTagline.blur();
+  if (event.key === "Escape") {
+    const key = `${state.species}:${state.mode}`;
+    els.matchTagline.value = state.matchTaglines[key] || defaultMatchTaglines[key];
+    els.matchTagline.blur();
+  }
+});
+$("#editMatchTagline").addEventListener("click", () => {
+  els.matchTagline.focus();
+  els.matchTagline.select();
 });
 
 let searchTimer;
@@ -546,6 +678,18 @@ $$('[data-results-view]').forEach((button) => {
   });
 });
 
+$$('[data-distance]').forEach((button) => {
+  button.addEventListener("click", async () => {
+    const radius = Number(button.dataset.distance);
+    if (!Number.isFinite(radius) || radius === state.radius) return;
+    state.radius = radius;
+    state.currentPage = 1;
+    $$('[data-distance]').forEach((item) => item.classList.toggle("active", item === button));
+    await searchTypesenseDogs();
+    showToast(`Showing ${state.species}s within ${radius} miles`);
+  });
+});
+
 $("#recenterMap").addEventListener("click", () => leafletMap?.flyTo([39.7684, -86.1581], 12, { duration: .7 }));
 $("#shuffleDogs").addEventListener("click", async () => {
   const button = $("#shuffleDogs");
@@ -555,7 +699,7 @@ $("#shuffleDogs").addEventListener("click", async () => {
   $("#dogSearch").value = "";
   try {
     await searchTypesenseDogs({ randomize: true });
-    showToast("A fresh pack just arrived");
+    showToast(`Fresh ${state.species}s just arrived`);
   } finally {
     button.disabled = false;
     button.removeAttribute("aria-busy");
@@ -567,7 +711,7 @@ $("#matchDogZoom").addEventListener("click", () => openPhotoViewer(state.matched
 $("#useCameraButton").addEventListener("click", startCamera);
 $("#photoInput").addEventListener("change", (event) => loadUploadedPhoto(event.target.files[0]));
 $("#retakeButton").addEventListener("click", resetCapture);
-$("#showMatchesButton").addEventListener("click", () => setScreen("nearby"));
+$("#showMatchesButton").addEventListener("click", showMatchedRecommendation);
 $("#flipButton").addEventListener("click", () => {
   state.facingMode = state.facingMode === "user" ? "environment" : "user";
   startCamera();
@@ -627,7 +771,7 @@ $("#interestDialogClose").addEventListener("click", () => $("#interestDialog").c
 $("#dogDialog").addEventListener("click", (event) => { if (event.target === $("#dogDialog")) $("#dogDialog").close(); });
 $("#interestDialog").addEventListener("click", (event) => { if (event.target === $("#interestDialog")) $("#interestDialog").close(); });
 $("#interestForm").addEventListener("submit", () => {
-  const dogName = state.selectedDog?.name || "this pup";
+  const dogName = state.selectedDog?.name || "this pet";
   setTimeout(() => showToast(`Your hello to ${dogName} is ready to go!`), 80);
 });
 
@@ -635,5 +779,6 @@ window.addEventListener("beforeunload", stopCamera);
 window.addEventListener("resize", () => leafletMap?.invalidateSize());
 
 updateSavedCounts();
+updateSpeciesCopy();
 setScreen("camera");
 loadTypesenseCatalog();

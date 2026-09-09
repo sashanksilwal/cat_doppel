@@ -141,6 +141,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, label:has(inp
 .profile-button { position: relative; width: 43px; height: 43px; border: 0; }
 .profile-button span { position: absolute; right: 0; bottom: 1px; width: 10px; height: 10px; border: 2px solid white; border-radius: 50%; background: #4cb86b; }
 .discover-tools { display: flex; gap: 10px; margin-top: 27px; }
+.species-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 24px; padding: 5px; border: 1px solid var(--line); border-radius: 16px; background: white; }
+.species-switch button { min-height: 43px; border: 0; border-radius: 11px; background: transparent; color: #777970; font-size: 11px; font-weight: 850; }
+.species-switch button.active { background: var(--yellow); color: var(--ink); box-shadow: 0 4px 12px rgba(155,153,0,.16); }
 .intent-switch { flex: 1; min-width: 190px; display: grid; grid-template-columns: 1fr 1fr; padding: 4px; border-radius: 14px; background: #f1f2ed; }
 .intent-switch button { min-height: 38px; padding: 0 15px; border: 0; border-radius: 10px; background: transparent; color: #74766e; font-size: 11px; font-weight: 750; }
 .intent-switch button.active { background: white; color: var(--ink); box-shadow: 0 2px 8px rgba(20,20,16,.08); }
@@ -152,10 +155,28 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, label:has(inp
 .match-banner { position: relative; display: grid; grid-template-columns: 47px 1fr; gap: 12px; align-items: center; margin: 20px 0; padding: 14px; overflow: hidden; border: 1px solid #efec65; border-radius: 17px; background: linear-gradient(120deg, #fffec3, #fffef1); }
 .banner-icon { width: 47px; height: 47px; display: grid; place-items: center; border-radius: 14px; background: var(--yellow); transform: rotate(-5deg); }
 .banner-icon svg { width: 25px; height: 25px; fill: var(--ink); stroke: none; }
-.match-banner div:nth-child(2) span, .match-banner div:nth-child(2) b { display: block; }
-.match-banner div:nth-child(2) span { color: #979521; font-size: 8px; font-weight: 850; letter-spacing: 1.2px; }
-.match-banner div:nth-child(2) b { margin-top: 4px; font-size: 12px; }
+.banner-copy { min-width: 0; }
+.banner-copy > span { display: block; color: #979521; font-size: 8px; font-weight: 850; letter-spacing: 1.2px; }
+.banner-edit-row { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+.banner-edit-row input { width: 100%; min-width: 0; margin-left: -5px; padding: 3px 5px; border: 1px solid transparent; border-radius: 6px; outline: 0; background: transparent; color: var(--ink); font: inherit; font-size: 12px; font-weight: 800; }
+.banner-edit-row input:hover { border-color: rgba(16,17,15,.14); background: rgba(255,255,255,.45); }
+.banner-edit-row input:focus { border-color: var(--ink); background: white; box-shadow: 0 0 0 2px var(--yellow); }
+.banner-edit-row button { flex: 0 0 auto; padding: 4px 7px; border: 1px solid rgba(16,17,15,.12); border-radius: 7px; background: rgba(255,255,255,.7); color: var(--ink); font-size: 7px; font-weight: 850; text-transform: uppercase; letter-spacing: .5px; cursor: pointer; }
+.banner-edit-row button:hover { background: white; }
 .sparkle { position: absolute; right: 14px; top: 8px; color: #d8d500; font-size: 16px; }
+.side-recommendation { display: grid; grid-template-columns: 82px minmax(0, 1fr) auto; gap: 13px; align-items: center; margin: -6px 0 18px; padding: 11px; border: 1px solid #e7e5bb; border-radius: 18px; background: white; box-shadow: 0 10px 28px rgba(16,17,15,.09); animation: recommendationIn .35s cubic-bezier(.2,.8,.2,1); }
+.side-recommendation[hidden] { display: none; }
+@keyframes recommendationIn { from { opacity: 0; transform: translateY(-8px) scale(.98); } }
+.recommendation-photo { width: 82px; height: 82px; border-radius: 14px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+.recommendation-copy { min-width: 0; }
+.recommendation-copy .section-kicker { color: #a29f16; font-size: 7px; }
+.recommendation-copy h3 { margin: 4px 0 1px; overflow: hidden; font-size: 18px; letter-spacing: -.6px; text-overflow: ellipsis; white-space: nowrap; }
+.recommendation-copy p { margin: 0; color: #676962; font-size: 10px; }
+.recommendation-copy small { display: block; margin-top: 7px; overflow: hidden; color: #8a8c84; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.recommendation-actions { display: grid; justify-items: end; gap: 9px; }
+.recommendation-actions strong { font-size: 20px; letter-spacing: -1px; }
+.recommendation-actions button { height: 32px; padding: 0 10px; border: 0; border-radius: 10px; background: var(--yellow); font-size: 8px; font-weight: 850; white-space: nowrap; }
+.recommendation-actions button:hover { background: var(--ink); color: white; }
 .display-bar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 0 0 13px; }
 .display-bar > span { color: var(--muted); font-size: 9px; font-weight: 700; }
 .display-actions { display: flex; align-items: center; gap: 6px; }
@@ -201,6 +222,11 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, label:has(inp
 .empty-dogs span { margin-top: 5px; font-size: 11px; }
 .dog-map { position: relative; height: min(68vh, 620px); min-height: 490px; overflow: hidden; border: 1px solid var(--line); border-radius: 21px; background: #eceee8; }
 #leafletMap { position: absolute; inset: 0; z-index: 1; font-family: inherit; }
+.map-distance-filter { position: absolute; left: 58px; right: 103px; top: 13px; z-index: 500; display: flex; align-items: center; justify-content: center; gap: 3px; padding: 3px; border-radius: 12px; background: rgba(255,255,255,.94); box-shadow: 0 5px 18px rgba(0,0,0,.14); backdrop-filter: blur(10px); }
+.map-distance-filter > span { padding: 0 6px; color: var(--muted); font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; }
+.map-distance-filter button { min-width: 39px; height: 30px; padding: 0 7px; border: 0; border-radius: 9px; background: transparent; color: #73756e; font-size: 8px; font-weight: 850; white-space: nowrap; }
+.map-distance-filter button:hover { background: var(--yellow-soft); color: var(--ink); }
+.map-distance-filter button.active { background: var(--yellow); color: var(--ink); box-shadow: 0 2px 8px rgba(155,153,0,.2); }
 .dog-map .leaflet-control-zoom { overflow: hidden; border: 0; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.15); }
 .dog-map .leaflet-control-zoom a { width: 34px; height: 34px; line-height: 34px; border: 0; color: var(--ink); font-size: 17px; }
 .dog-map .leaflet-control-attribution { padding: 3px 6px; background: rgba(255,255,255,.82); font-size: 8px; }
@@ -337,6 +363,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, label:has(inp
   .mobile-nav i.visible { display: grid; }
   .toast { bottom: calc(86px + env(safe-area-inset-bottom)); }
   .map-location { display: none; }
+  .map-distance-filter > span { display: none; }
 }
 
 @media (max-width: 480px) {
@@ -357,10 +384,16 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, label:has(inp
   .dog-tags span:nth-child(n+2) { display: none; }
   .shelter span { max-width: 78px; }
   .match-banner { margin: 16px 0; }
+  .side-recommendation { grid-template-columns: 72px minmax(0, 1fr); }
+  .recommendation-photo { width: 72px; height: 72px; }
+  .recommendation-actions { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; }
   .display-bar { align-items: flex-start; }
   .display-bar > span { max-width: 100px; padding-top: 5px; line-height: 1.35; }
   .pack-shuffle { width: 37px; padding: 0; justify-content: center; font-size: 0; }
   .dog-map { height: calc(100dvh - 280px); min-height: 500px; border-radius: 18px; }
+  .map-distance-filter { right: 12px; }
+  .map-distance-filter button { flex: 1; min-width: 0; }
+  .recenter-map { top: 57px; }
   .dog-dialog { width: 100%; max-width: none; margin: auto 0 0; border-radius: 25px 25px 0 0; }
   .dialog-photo { height: 39vh; min-height: 250px; }
   .photo-dialog { width: 100%; height: 100dvh; max-width: none; max-height: none; margin: 0; border-radius: 0; }
