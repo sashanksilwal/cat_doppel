@@ -1,0 +1,78 @@
+{
+  "provider": "Dog CEO API",
+  "downloaded_at": "2026-09-08T23:16:23.932Z",
+  "images": [
+    {
+      "id": "luna",
+      "file": "assets/dogs/luna.jpg",
+      "source_url": "https://images.dog.ceo/breeds/husky/n02110185_10875.jpg",
+      "api_endpoint": "https://dog.ceo/api/breed/husky/images/random"
+    },
+    {
+      "id": "ollie",
+      "file": "assets/dogs/ollie.jpg",
+      "source_url": "https://images.dog.ceo/breeds/beagle/n02088364_10731.jpg",
+      "api_endpoint": "https://dog.ceo/api/breed/beagle/images/random"
+    },
+    {
+      "id": "winnie",
+      "file": "assets/dogs/winnie.jpg",
+      "source_url": "https://images.dog.ceo/breeds/dalmatian/cooper2.jpg",
+      "api_endpoint": "https://dog.ceo/api/breed/dalmatian/images/random"
+    },
+    {
+      "id": "theo",
+      "file": "assets/dogs/theo.jpg",
+      "source_url": "https://images.dog.ceo/breeds/pug/n02110958_11256.jpg",
+      "api_endpoint": "https://dog.ceo/api/breed/pug/images/random"
+    },
+    {
+      "id": "nova",
+      "file": "assets/dogs/nova.jpg",
+      "source_url": "https://images.dog.ceo/breeds/samoyed/n02111889_2476.jpg",
+      "api_endpoint": "https://dog.ceo/api/breed/samoyed/images/random"
+    },
+    {
+      "id": "teddy",
+      "file": "assets/dogs/teddy.jpg",
+      "source_url": "https://images.dog.ceo/breeds/shiba/shiba-8.jpg",
+      "api_endpoint": "https://dog.ceo/api/breed/shiba/images/random"
+    },
+    {
+      "id": "rosie",
+      "file": "assets/dogs/rosie.jpg",
+      "source_url": "https://images.dog.ceo/breeds/chihuahua/chster-ears.jpg",
+      "api_endpoint": "https://dog.ceo/api/breed/chihuahua/images/random"
+    },
+    {
+      "id": "jasper",
+      "file": "assets/dogs/jasper.jpg",
+      "source_url": "https://images.dog.ceo/breeds/poodle-standard/n02113799_153.jpg",
+      "api_endpoint": "https://dog.ceo/api/breed/poodle/images/random"
+    },
+    {
+      "id": "scout",
+      "file": "assets/dogs/scout.jpg",
+      "source_url": "https://images.dog.ceo/breeds/pembroke/n02113023_187.jpg",
+      "api_endpoint": "https://dog.ceo/api/breed/pembroke/images/random"
+    },
+    {
+      "id": "sasha",
+      "file": "assets/dogs/sasha.jpg",
+      "source_url": "https://images.dog.ceo/breeds/malinois/n02105162_8242.jpg",
+      "api_endpoint": "https://dog.ceo/api/breed/malinois/images/random"
+    },
+    {
+      "id": "noodle",
+      "file": "assets/dogs/noodle.jpg",
+      "source_url": "https://images.dog.ceo/breeds/pomeranian/n02112018_5778.jpg",
+      "api_endpoint": "https://dog.ceo/api/breed/pomeranian/images/random"
+    },
+    {
+      "id": "louie",
+      "file": "assets/dogs/louie.jpg",
+      "source_url": "https://images.dog.ceo/breeds/hound-basset/n02088238_12997.jpg",
+      "api_endpoint": "https://dog.ceo/api/breed/hound/basset/images/random"
+    }
+  ]
+}

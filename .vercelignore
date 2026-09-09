@@ -1,0 +1,13 @@
+.git
+.env
+.env.*
+!.env.example
+*-api-keys-*.txt
+.cache
+node_modules
+dist
+.DS_Store
+nps-parks.json
+wildlife-sightings.json
+p01rke23vh5yuibdp-api-keys-1788898168.txt
+nbg72ci9h8o4vyzup-api-keys-1788908520.txt

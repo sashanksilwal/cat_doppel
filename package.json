@@ -1,16 +1,23 @@
 {
-  "name": "parklens",
+  "name": "doppel-dog-match",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "node scripts/build-static.mjs",
     "dev": "node server.mjs",
     "start": "node server.mjs",
+    "dogs:download": "node scripts/download-dog-photos.mjs",
+    "dogs:seed": "node scripts/seed-dog-catalog.mjs",
+    "typesense:dogs": "node scripts/typesense-dogs-setup.mjs",
     "typesense:setup": "node scripts/typesense-setup.mjs",
     "typesense:import-nps": "node scripts/import-nps.mjs",
+    "typesense:import-wildlife": "node scripts/import-wildlife.mjs",
     "typesense:embed": "node scripts/embed-catalog.mjs"
   },
   "dependencies": {
-    "@huggingface/transformers": "^4.2.0"
+    "@huggingface/transformers": "^4.2.0",
+    "leaflet": "^1.9.4",
+    "sharp": "^0.34.5"
   }
 }

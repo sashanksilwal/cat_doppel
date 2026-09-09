@@ -1,50 +1,55 @@
-# ParkLens
+# Doppel
 
-Visual and geographic discovery for national parks. The MVP includes image upload, text search, radius filtering, landscape facets, a result map, saved places, and a Typesense REST adapter. It falls back to a curated dataset when Typesense is not configured.
+A camera-first dog discovery concept. Take or upload a selfie to reveal a playful dog doppelgänger, then browse adoptable dogs and friendly playdates nearby.
 
-## Run
+## Run locally
 
 ```bash
 npm run dev
 ```
 
-Open `http://localhost:4173`.
+Open [http://localhost:4173](http://localhost:4173).
 
-## Connect Typesense
+The app is intentionally self-contained: dog data and imagery are local, favorites persist in `localStorage`, and the live-camera flow uses the browser’s `getUserMedia` API. If camera permission is unavailable, the sample selfie and photo uploader keep the full matching flow usable.
 
-Copy `.env.example` to `.env`, then add your Typesense host, search-only key, and admin key. Credentials stay server-side and `.env` is ignored by Git.
+## Typesense
 
-Create the collection and import the demo parks:
+Typesense Cloud credential exports matching `*-api-keys-*.txt` are ignored by Git. When one or more exports are in the project root, the server securely loads the newest export before `.env` and keeps both API keys server-side.
 
-```bash
-npm run typesense:setup
-```
-
-Import the full National Park Service catalog, including coordinates, activities, topics, descriptions, and available images:
+Create the `dogs` collection and upsert the local listings:
 
 ```bash
-npm run typesense:import-nps
+npm run typesense:dogs
 ```
 
-Start the app with `npm run dev`. Browser searches go through the local `/api/search` proxy, so neither Typesense key appears in frontend code.
+The browser searches through the local `/api/dogs` proxy. The search-only key is never included in frontend code, and the app falls back to the local dog catalog if Typesense is unavailable.
 
-The collection is named `parks` by default and uses these core fields:
+## Dog photos and map data
 
-```json
-{
-  "name": "parks",
-  "fields": [
-    { "name": "id", "type": "string" },
-    { "name": "name", "type": "string" },
-    { "name": "description", "type": "string" },
-    { "name": "tags", "type": "string[]", "facet": true },
-    { "name": "category", "type": "string[]", "facet": true },
-    { "name": "accessible", "type": "bool", "facet": true },
-    { "name": "location", "type": "geopoint" },
-    { "name": "image", "type": "string" },
-    { "name": "state", "type": "string", "facet": true }
-  ]
-}
+Build a varied local catalog of 2,048 demo dog profiles from public Dog CEO photos:
+
+```bash
+npm run dogs:seed
 ```
 
-For production image search, compute CLIP embeddings for NPS images during ingestion, add a `float[]` vector field, compute the uploaded image embedding in a small backend, and send it to Typesense using `vector_query`. The current offline demo marks uploaded images as a visual-search signal while keeping all interaction functional without secrets or external services.
+The generator caches resized WebP images in `assets/dogs/generated/`, records source URLs in `data/generated-dogs.json`, and assigns stable Indianapolis-area demo locations. Rerunning it uses the cache; set `DOG_REFRESH=1` to fetch a new photo set. Use `DOG_CATALOG_SIZE` to request a larger catalog (the minimum is 2,048).
+
+For the smaller hand-curated photo set, run:
+
+```bash
+npm run dogs:download
+```
+
+The setup command combines both sets and currently indexes 2,066 searchable dogs in Typesense. Normal app usage does not depend on the image API, because all images are cached locally. The generated names, shelter details, availability, and geotags are fictional demo content rather than live adoption listings.
+
+The list/map switch uses a locally installed Leaflet client with OpenStreetMap tiles. Photo markers open a compact dog summary and link directly into the existing profile sheet.
+
+## Main interactions
+
+- Enable the live camera, take a picture, or upload an existing selfie.
+- Reveal a dog-vibe match and jump into nearby matches.
+- Switch between adoptable dogs and supervised pet/playdate listings.
+- Search, save, inspect details, and prepare an introduction to a shelter or foster.
+- Switch between list and map views to explore dog locations.
+
+The current matching result and listings are demo content designed to communicate the product experience; a production version should connect to a verified shelter inventory and a real matching service.
